@@ -1,0 +1,107 @@
+{
+  "trendingEvents": [
+    {
+      "id": 101,
+      "title": "Neon Beats Festival",
+      "imageUrl": "https://picsum.photos/seed/event101/600/800",
+      "location": "Bangkok",
+      "date": "2025-11-10T19:00:00.000Z",
+      "price": 95,
+      "zonePrices": { "VVIP": 300, "VIP": 150, "REG": 95 },
+      "category": "Music Concert",
+      "description": "A high-energy EDM and dance night with neon lights and DJs from around Asia."
+    },
+    {
+      "id": 102,
+      "title": "Skyline Symphony",
+      "imageUrl": "https://picsum.photos/seed/event102/600/800",
+      "location": "Bangkok Rooftop Hall",
+      "date": "2025-11-20T20:00:00.000Z",
+      "price": 120,
+      "zonePrices": { "VVIP": 300, "VIP": 150, "REG": 120 },
+      "category": "Show",
+      "description": "Experience classical symphonies performed under the city skyline."
+    },
+    {
+      "id": 103,
+      "title": "Sunset Acoustic Sessions",
+      "imageUrl": "https://picsum.photos/seed/event103/600/800",
+      "location": "Chiang Mai Riverside",
+      "date": "2025-11-25T17:30:00.000Z",
+      "price": 60,
+      "zonePrices": { "VVIP": 250, "VIP": 105, "REG": 60 },
+      "category": "Music Concert",
+      "description": "Chill out with acoustic bands as the sun sets by the riverside."
+    }
+  ],
+  "upcomingEvents": [
+    {
+      "id": 201,
+      "title": "Global Jazz Collective",
+      "imageUrl": "https://picsum.photos/seed/event104/600/800",
+      "location": "Bangkok Jazz Hall",
+      "date": "2025-12-05T19:30:00.000Z",
+      "price": 80,
+      "zonePrices": { "VVIP": 300, "VIP": 135, "REG": 80 },
+      "category": "Music Concert",
+      "description": "An international jazz night featuring top musicians from around the globe."
+    },
+    {
+      "id": 202,
+      "title": "Bloom Pop Festival",
+      "imageUrl": "https://picsum.photos/seed/event202/600/800",
+      "location": "Chiang Mai Cultural Center",
+      "date": "2025-12-15T18:00:00.000Z",
+      "price": 80,
+      "zonePrices": { "VVIP": 300, "VIP": 135, "REG": 80 },
+      "category": "Show",
+      "description": "Celebrate the season with colorful pop performances and floral displays."
+    },
+    {
+      "id": 203,
+      "title": "Retro Broadway Live",
+      "imageUrl": "https://picsum.photos/seed/event203/600/800",
+      "location": "Bangkok Theatre",
+      "date": "2026-01-10T19:00:00.000Z",
+      "price": 75,
+      "zonePrices": { "VVIP": 240, "VIP": 130, "REG": 75 },
+      "category": "Show",
+      "description": "Classic Broadway musicals revived with a modern twist."
+    }
+  ],
+  "nearbyEvents": [
+    {
+      "id": 301,
+      "title": "Indie Horizon Night",
+      "imageUrl": "https://picsum.photos/seed/event301/600/800",
+      "location": "Khon Kaen Music Park",
+      "date": "2025-11-30T18:30:00.000Z",
+      "price": 50,
+      "zonePrices": { "VVIP": 185, "VIP": 105, "REG": 50 },
+      "category": "Music Concert",
+      "description": "A showcase of rising indie bands with fresh sounds."
+    },
+    {
+      "id": 302,
+      "title": "Urban Street Fest",
+      "imageUrl": "https://picsum.photos/seed/event302/600/800",
+      "location": "Bangkok Street Market",
+      "date": "2025-12-20T16:00:00.000Z",
+      "price": 40,
+      "zonePrices": { "VVIP": 185, "VIP": 105, "REG": 50 },
+      "category": "Show",
+      "description": "Street food, live music, and cultural performances all in one vibrant night."
+    },
+    {
+      "id": 303,
+      "title": "Ocean Waves Live",
+      "imageUrl": "https://picsum.photos/seed/event303/600/800",
+      "location": "Phuket Beach Stage",
+      "date": "2025-12-25T17:00:00.000Z",
+      "price": 100,
+      "zonePrices": { "VVIP": 300, "VIP": 150, "REG": 100 },
+      "category": "Music Concert",
+      "description": "Open-air beach concert with bands and DJs by the ocean waves."
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "962786966781",
+    "project_id": "flutterauth-5556e",
+    "storage_bucket": "flutterauth-5556e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:962786966781:android:8fc53abc6c3ab9055fd294",
+        "android_client_info": {
+          "package_name": "com.example.galleria_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA3XOB82nvTvKHDWC2u-VNJlxW8rDROOdg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

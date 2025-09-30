@@ -1,0 +1,6 @@
+{
+  "products": [
+    { "id": 1, "name": "AKG N700NCM2", "price": 199, "detail": "Noise cancelling hi-fi headphones", "available": true },
+    { "id": 2, "name": "AIWA TMA-2 Modular", "price": 259, "detail": "Modular studio headphone", "available": true }
+  ]
+}
