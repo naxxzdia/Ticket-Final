@@ -61,10 +61,30 @@ class _HomeTabState extends State<HomeTab> {
   }
 
   Widget _sectionTitle(String title) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        child: Text(title,
-            style: const TextStyle(
-                fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600, // Semi-Bold
+                color: Color(0xFFFF4081), // pink accent
+                letterSpacing: .4,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              height: 2,
+              width: 70,
+              decoration: BoxDecoration(
+                color: const Color(0xFF9C27B0).withOpacity(.30), // soft purple divider
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ],
+        ),
       );
 
   Widget _horizontalEvents(List<Event> events, {double height = 190}) {
@@ -103,39 +123,27 @@ class _HomeTabState extends State<HomeTab> {
                       tag: 'event-image-${e.id}',
                       child: Image.network(e.imageUrl, fit: BoxFit.cover),
                     ),
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withOpacity(0.8),
-                          ],
+                    // dark overlay card background for contrast
+                    Container(color: const Color(0xFF2A2A2A).withOpacity(.25)),
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              const Color(0xFF2A2A2A).withOpacity(.95),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                     Positioned(
-                      left: 8,
-                      right: 8,
-                      bottom: 8,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('฿${e.price.toStringAsFixed(0)}',
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold)),
-                          Text(
-                            e.title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: Colors.white, fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
+                      left: 10,
+                      right: 10,
+                      bottom: 10,
+                      child: _eventCardTexts(e),
                     ),
                   ],
                 ),
@@ -147,27 +155,78 @@ class _HomeTabState extends State<HomeTab> {
     );
   }
 
+  Widget _eventCardTexts(Event e) {
+    final date = e.date;
+    final month = const ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][date.month-1];
+    final dateStr = '${date.day.toString().padLeft(2,'0')} $month ${date.year}';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+          Text('\$${e.price.toStringAsFixed(0)}',
+            style: const TextStyle(
+              color: Color(0xFFFF4081), // pink accent price
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: .3,
+            )),
+        const SizedBox(height: 4),
+        Text(
+          e.title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 13.5,
+            height: 1.15,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          dateStr,
+          style: const TextStyle(
+            color: Color(0xFFFF9AA2), // soft pink accent for subtitle
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            letterSpacing: .2,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final data = _cache;
     final trending = data?.$1 ?? [];
     final upcoming = data?.$2 ?? [];
     final nearby = data?.$3 ?? [];
+    const bg = Color(0xFF1A1A1A);
     return RefreshIndicator(
       onRefresh: _refresh,
       color: Colors.white,
-      backgroundColor: Colors.black,
+      backgroundColor: bg,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           SliverAppBar(
-            backgroundColor: Colors.black,
+            backgroundColor: bg,
             pinned: true,
-            title: const Text('Home', style: TextStyle(color: Colors.white)),
+            elevation: 0,
+            title: const Text(
+              'Home',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Colors.white, // pure white
+                letterSpacing: .4,
+              ),
+            ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.refresh, color: Colors.white70),
+                icon: const Icon(Icons.refresh, color: Color(0xFFFF4081)), // pink accent
                 onPressed: _refresh,
+                tooltip: 'Refresh',
               )
             ],
           ),
@@ -210,27 +269,45 @@ class _HomeTabState extends State<HomeTab> {
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
                           decoration: BoxDecoration(
                             gradient: selected
-                                ? LinearGradient(colors: [
-                                    Colors.greenAccent.shade400,
-                                    Colors.greenAccent.shade200,
-                                  ])
+                                ? const LinearGradient(
+                                    colors: [Color(0xFFFF9AA2), Color(0xFF673AB7)],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  )
                                 : null,
-                            color: selected ? null : Colors.grey[900],
+                            color: selected ? null : const Color(0xFF2E2E2E),
                             borderRadius: BorderRadius.circular(30),
-                            border: Border.all(color: selected ? Colors.greenAccent.shade400 : Colors.grey[800]!),
+                            border: Border.all(
+                              color: selected ? const Color(0xFF673AB7) : const Color(0xFF2E2E2E),
+                              width: 1.2,
+                            ),
+                            boxShadow: selected
+                                ? [
+                                    BoxShadow(
+                                      color: const Color(0xFF673AB7).withOpacity(.35),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
+                                    )
+                                  ]
+                                : null,
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.music_note, size: 16, color: selected ? Colors.black87 : Colors.white70),
+                              Icon(
+                                Icons.music_note,
+                                size: 16,
+                                color: selected ? Colors.white : const Color(0xFFE0E0E0),
+                              ),
                               const SizedBox(width: 6),
                               Text(
                                 cat,
                                 style: TextStyle(
-                                  color: selected ? Colors.black : Colors.white70,
+                                  color: selected ? Colors.white : const Color(0xFFE0E0E0),
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  height: 1.2, // give extra line box space to avoid clipping
+                                  height: 1.2,
+                                  letterSpacing: .3,
                                 ),
                               ),
                             ],

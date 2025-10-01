@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/ticket_storage.dart';
 import '../models/purchased_ticket.dart';
 import 'ticket_eticket_screen.dart';
+import 'info_screen.dart';
 import '../models/event.dart';
 import 'edit_profile_screen.dart';
 import 'settings_screen.dart';
@@ -46,38 +47,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final padTop = MediaQuery.of(context).padding.top;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF1A1A1A),
       body: Stack(
         children: [
-          // gradient backdrop
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFF12081F), Color(0xFF06060A)],
-                ),
-              ),
-            ),
-          ),
-          // noise / subtle overlay
-          Positioned.fill(
-            child: IgnorePointer(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.white.withOpacity(.02), Colors.transparent],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-              ),
-            ),
-          ),
           RefreshIndicator(
             color: Colors.white,
-            backgroundColor: Colors.black,
+            backgroundColor: const Color(0xFF1A1A1A),
             onRefresh: _load,
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
@@ -115,9 +90,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.location_on_outlined, size: 14, color: Colors.white54),
+                              const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFFFF4081)),
                               const SizedBox(width: 4),
-                              Text(_location!, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                              Text(_location!, style: const TextStyle(color: Color(0xFFFF9AA2), fontSize: 12, fontWeight: FontWeight.w600)),
                             ],
                           )
                         else
@@ -144,18 +119,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
       alignment: Alignment.bottomRight,
       children: [
         Container(
-          padding: const EdgeInsets.all(3),
+          padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: const LinearGradient(colors: [Color(0xFF6F3CFF), Color(0xFF4E19FF)]),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(.5), blurRadius: 18, offset: const Offset(0,8))],
+            color: const Color(0xFF2A1E3F),
+            border: Border.all(color: const Color(0xFF503B6E), width: 1.2),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(.55), blurRadius: 22, offset: const Offset(0,10)),
+              BoxShadow(color: const Color(0xFF673AB7).withOpacity(.25), blurRadius: 30, spreadRadius: 2),
+            ],
           ),
           child: CircleAvatar(
             radius: 50,
             backgroundColor: const Color(0xFF1C1C1E),
             backgroundImage: (_user?.photoURL != null && _user!.photoURL!.isNotEmpty)
                 ? NetworkImage(_user!.photoURL!)
-                : const AssetImage('assets/images/taro1.1.jpg') as ImageProvider,
+                : const AssetImage('assets/images/butter.jpg') as ImageProvider,
             child: (_user?.photoURL == null)
                 ? const Icon(Icons.person, color: Colors.white54, size: 40)
                 : null,
@@ -176,11 +155,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: const Color(0xFFFF5DA2),
+                color: const Color(0xFFFF4081),
                 shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(.4), blurRadius: 10)],
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(.45), blurRadius: 10, offset: const Offset(0,4)),
+                  BoxShadow(color: const Color(0xFFFF4081).withOpacity(.4), blurRadius: 18, spreadRadius: 1),
+                ],
               ),
-              child: const Icon(Icons.edit, size: 16, color: Colors.white),
+              child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
             ),
           ),
         )
@@ -227,7 +209,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       onTap: () => _openTicket(t),
       child: Container(
         padding: const EdgeInsets.all(14),
-        decoration: _cardDecoration(),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2A1E3F),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0x332A1E3F)),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(.45), blurRadius: 26, offset: const Offset(0, 10)),
+          ],
+        ),
         child: Row(
           children: [
             ClipRRect(
@@ -246,15 +235,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Text(t.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 6),
-                  Text(dateStr, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                  Text(dateStr, style: const TextStyle(color: Color(0xFFFF9AA2), fontSize: 12, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.greenAccent.shade400,
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFF4081), Color(0xFF673AB7)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                       borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(color: const Color(0xFFFF4081).withOpacity(.35), blurRadius: 14, offset: const Offset(0,4)),
+                      ],
                     ),
-                    child: Text(t.zoneLabel, style: const TextStyle(color: Colors.black, fontSize: 11, fontWeight: FontWeight.w700)),
+                    child: Text(t.zoneLabel.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: .5)),
                   ),
                 ],
               ),
@@ -321,7 +317,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             );
           }),
           _divider(),
-          _menuItem(Icons.info_outline, 'Information', () {}),
+          _menuItem(Icons.info_outline, 'Information', () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const InfoScreen()),
+            );
+          }),
           _divider(),
           _menuItem(Icons.logout, 'Log Out', () async {
             await FirebaseAuth.instance.signOut();
@@ -337,21 +337,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _menuItem(IconData icon, String label, VoidCallback onTap, {bool danger = false}) {
+    const accent = Color(0xFFFF4081);
+    const dangerColor = Color(0xFFE75480); // pinkish red for destructive
     return InkWell(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         child: Row(
           children: [
-            Icon(icon, color: danger ? const Color(0xFFFF5DA2) : Colors.white70, size: 20),
+            Icon(icon, color: danger ? dangerColor : accent, size: 20),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
                 label,
                 style: TextStyle(
-                  color: danger ? const Color(0xFFFF5DA2) : Colors.white,
+                  color: danger ? dangerColor : Colors.white,
                   fontWeight: FontWeight.w600,
                   fontSize: 13.5,
+                  letterSpacing: .2,
                 ),
               ),
             ),
@@ -362,5 +365,5 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _divider() => Container(height: 1, color: Colors.white10, margin: const EdgeInsets.symmetric(horizontal: 18));
+  Widget _divider() => Container(height: 1, color: const Color(0xFF3B3B3B), margin: const EdgeInsets.symmetric(horizontal: 18));
 }

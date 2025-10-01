@@ -89,7 +89,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         const SizedBox(height: 24),
                         Text(p.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
-                        Text('฿${p.price.toStringAsFixed(2)}', style: const TextStyle(fontSize: 18, color: Colors.green, fontWeight: FontWeight.w600)),
+                          Text('\$${p.price.toStringAsFixed(2)}', style: const TextStyle(fontSize: 18, color: Colors.green, fontWeight: FontWeight.w600)),
                         const SizedBox(height: 12),
                         Text(p.detail, style: const TextStyle(fontSize: 14, height: 1.4)),
                         const SizedBox(height: 24),

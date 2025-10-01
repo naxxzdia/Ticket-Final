@@ -23,23 +23,81 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    const bg = Color(0xFF1A1A1A);
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: bg,
       body: SafeArea(child: _pages[_currentIndex]),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.black,
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _currentIndex,
-        selectedItemColor: Colors.greenAccent.shade400,
-        unselectedItemColor: Colors.white70,
-        showUnselectedLabels: true,
-        onTap: (i) => setState(() => _currentIndex = i),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.confirmation_number_outlined), label: 'Tickets'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
-        ],
-      ),
+      bottomNavigationBar: _buildBottomNav(bg),
+    );
+  }
+
+  Widget _buildBottomNav(Color bg) {
+    const inactiveColor = Color(0xFF9E9E9E); // Gray 500
+    const grad2 = Color(0xFFFF4081); // vivid pink
+    const grad3 = Color(0xFF673AB7); // purple
+
+    Shader _gradientShader(Rect bounds) => const LinearGradient(
+          colors: [grad2, grad3],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ).createShader(bounds);
+
+    Widget _gradIcon(IconData icon) => ShaderMask(
+          blendMode: BlendMode.srcIn,
+          shaderCallback: _gradientShader,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // subtle glow
+              Positioned(
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.white.withOpacity(.18),
+                        blurRadius: 14,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Icon(icon),
+            ],
+          ),
+        );
+
+    BottomNavigationBarItem _item({
+      required IconData icon,
+      required String label,
+      int? index,
+    }) {
+      return BottomNavigationBarItem(
+        icon: Icon(icon, color: inactiveColor),
+        activeIcon: _gradIcon(icon),
+        label: label,
+        tooltip: label,
+      );
+    }
+
+    return BottomNavigationBar(
+      backgroundColor: bg,
+      type: BottomNavigationBarType.fixed,
+      currentIndex: _currentIndex,
+      showUnselectedLabels: true,
+      selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
+      unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
+      selectedItemColor: Colors.white, // overridden by ShaderMask visually
+      unselectedItemColor: inactiveColor,
+      onTap: (i) => setState(() => _currentIndex = i),
+      items: [
+        _item(icon: Icons.home_outlined, label: 'Home', index: 0),
+        _item(icon: Icons.confirmation_number_outlined, label: 'Tickets', index: 1),
+        _item(icon: Icons.person_outline, label: 'Profile', index: 2),
+      ],
     );
   }
 }

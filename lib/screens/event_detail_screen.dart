@@ -20,7 +20,7 @@ class EventDetailScreen extends StatelessWidget {
               SliverAppBar(
                 backgroundColor: Colors.black,
                 pinned: true,
-                expandedHeight: 320,
+                expandedHeight: 300,
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
                   onPressed: () => Navigator.of(context).maybePop(),
@@ -31,7 +31,14 @@ class EventDetailScreen extends StatelessWidget {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        Image.network(event.imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: Colors.grey[800], child: const Icon(Icons.image_not_supported, color: Colors.white54))),
+                        Image.network(
+                          event.imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: Colors.grey[800],
+                            child: const Icon(Icons.image_not_supported, color: Colors.white54),
+                          ),
+                        ),
                         Container(
                           decoration: const BoxDecoration(
                             gradient: LinearGradient(
@@ -44,7 +51,7 @@ class EventDetailScreen extends StatelessWidget {
                         Positioned(
                           left: 16,
                           right: 16,
-                          bottom: 24,
+                          bottom: 20,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -52,32 +59,22 @@ class EventDetailScreen extends StatelessWidget {
                               const SizedBox(height: 6),
                               Text(event.title, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
                               const SizedBox(height: 10),
-                              LayoutBuilder(
-                                builder: (context, constraints) {
-                                  return Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          '฿${event.price.toStringAsFixed(0)} / person',
-                                          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      const Flexible(
-                                        child: Text(
-                                          'Bills included',
-                                          style: TextStyle(color: Colors.white54, fontSize: 12),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                },
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      '\$${event.price.toStringAsFixed(0)} / person',
+                                      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text('Bills included', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                                ],
                               ),
                             ],
                           ),
-                        )
+                        ),
                       ],
                     ),
                   ),
@@ -89,19 +86,13 @@ class EventDetailScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(event.title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                      Text(event.title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 16),
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Icon(Icons.event, color: Colors.white70, size: 20),
                           const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              '${_formatDate(event.date.toLocal())}  ${_formatTime(event.date.toLocal())}',
-                              style: const TextStyle(color: Colors.white70),
-                            ),
-                          ),
+                          Text('${_formatDate(event.date.toLocal())}  ${_formatTime(event.date.toLocal())}', style: const TextStyle(color: Colors.white70)),
                         ],
                       ),
                       const SizedBox(height: 12),
@@ -114,7 +105,7 @@ class EventDetailScreen extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 24),
-                      const Text('Event Details', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                      const Text('Event Details', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 10),
                       Text(
                         event.description.isNotEmpty ? event.description : 'No description provided.',
@@ -123,7 +114,7 @@ class EventDetailScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-              )
+              ),
             ],
           ),
           Positioned(
@@ -141,25 +132,47 @@ class EventDetailScreen extends StatelessWidget {
                 child: SizedBox(
                   width: double.infinity,
                   height: 50,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.greenAccent.shade400,
-                      foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => CheckoutFlowScreen(event: event),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Ink(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                            Color(0xFFFFD1DC),
+                            Color(0xFFE75480),
+                            Color(0xFF673AB7),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                      );
-                    },
-                    child: const Text('Buy Tickets', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => CheckoutFlowScreen(event: event),
+                            ),
+                          );
+                        },
+                        child: const Center(
+                          child: Text(
+                            'Buy Tickets',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-          )
+          ),
         ],
       ),
     );

@@ -54,79 +54,129 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF1A1A1A),
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: const Text('Settings'),
+        backgroundColor: const Color(0xFF1A1A1A),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFFFF4081)),
+          splashRadius: 24,
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        title: const Text(
+          'Settings',
+          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: .3),
+        ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         children: [
           _sectionTitle('Account'),
           _tile(
             icon: Icons.logout,
             label: 'Sign Out',
-            trailing: _signingOut ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.chevron_right, color: Colors.white38),
+            trailing: _signingOut
+                ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)))
+                : const Icon(Icons.chevron_right, color: Colors.white38),
             danger: true,
             onTap: _signingOut ? null : _signOut,
           ),
-          const SizedBox(height: 26),
+          const SizedBox(height: 28),
           _sectionTitle('Tickets'),
           _tile(
             icon: Icons.delete_sweep_outlined,
-            label: 'Clear All Tickets (local)',
-            trailing: _clearing ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2)) : null,
+            label: 'Clear All Tickets (Local)',
+            trailing: _clearing
+                ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)))
+                : null,
             onTap: _clearing ? null : _clearTickets,
           ),
-          const SizedBox(height: 26),
+          const SizedBox(height: 28),
           _sectionTitle('Preferences'),
-          SwitchListTile(
+          _switchTile(
             value: true,
+            label: 'Notifications (placeholder)',
             onChanged: (_) {},
-            activeColor: Colors.greenAccent.shade400,
-            title: const Text('Notifications (placeholder)', style: TextStyle(color: Colors.white)),
           ),
-          SwitchListTile(
+          _switchTile(
             value: false,
+            label: 'Dark Mode (Always On)',
             onChanged: (_) {},
-            activeColor: Colors.greenAccent.shade400,
-            title: const Text('Dark Mode (Always On)', style: TextStyle(color: Colors.white)),
           ),
-          const SizedBox(height: 50),
+          const SizedBox(height: 60),
           const Center(
-            child: Text('v1.0.0', style: TextStyle(color: Colors.white24, fontSize: 12)),
-          )
+            child: Text('v1.0.0', style: TextStyle(color: Colors.white24, fontSize: 12, letterSpacing: .5)),
+          ),
+          const SizedBox(height: 20),
         ],
       ),
     );
   }
 
   Widget _sectionTitle(String text) => Padding(
-        padding: const EdgeInsets.fromLTRB(4, 10, 4, 10),
-        child: Text(text, style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600)),
+        padding: const EdgeInsets.fromLTRB(4, 4, 4, 12),
+        child: Row(
+          children: [
+            Container(width: 4, height: 14, decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFFFF4081), Color(0xFF673AB7)]), borderRadius: BorderRadius.all(Radius.circular(2)))),
+            const SizedBox(width: 10),
+            Text(text.toUpperCase(), style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.1)),
+          ],
+        ),
       );
 
   Widget _tile({required IconData icon, required String label, VoidCallback? onTap, Widget? trailing, bool danger = false}) {
+    const accent = Color(0xFFFF4081);
+    const dangerColor = Color(0xFFE75480);
     return InkWell(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        margin: const EdgeInsets.only(bottom: 10),
+      borderRadius: BorderRadius.circular(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E1E22),
+          color: const Color(0xFF2A1E3F).withOpacity(.85),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white10),
         ),
         child: Row(
           children: [
-            Icon(icon, color: danger ? const Color(0xFFFF5DA2) : Colors.white70, size: 20),
+            Icon(icon, color: danger ? dangerColor : accent, size: 20),
             const SizedBox(width: 16),
             Expanded(
-              child: Text(label, style: TextStyle(color: danger ? const Color(0xFFFF5DA2) : Colors.white, fontWeight: FontWeight.w600, fontSize: 13.5)),
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: danger ? dangerColor : Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13.5,
+                  letterSpacing: .2,
+                ),
+              ),
             ),
             trailing ?? const Icon(Icons.chevron_right, color: Colors.white38, size: 20),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _switchTile({required bool value, required String label, required ValueChanged<bool> onChanged}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2A1E3F).withOpacity(.85),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: SwitchListTile(
+        value: value,
+        onChanged: onChanged,
+        contentPadding: EdgeInsets.zero,
+        inactiveThumbColor: const Color(0xFF4A3B6B),
+        inactiveTrackColor: const Color(0xFF241832),
+        activeColor: Colors.white,
+        activeTrackColor: const Color(0xFFFF4081),
+        title: Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13.5)),
       ),
     );
   }

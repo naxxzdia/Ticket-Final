@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
 import '../../models/event.dart';
+// (Removed duplicate imports)
 import '../../services/ticket_storage.dart';
 import '../../util/id_utils.dart';
 import '../ticket_eticket_screen.dart';
 
-/// 3-step checkout flow: Checkout -> Payment -> Success -> E-Ticket
 class CheckoutFlowScreen extends StatefulWidget {
   const CheckoutFlowScreen({super.key, required this.event});
   final Event event;
-
   @override
   State<CheckoutFlowScreen> createState() => _CheckoutFlowScreenState();
 }
 
 class _CheckoutFlowScreenState extends State<CheckoutFlowScreen> {
-  int _step = 0; // 0 checkout, 1 payment, 2 success
+  int _step = 0; // 0=checkout,1=payment,2=success
   int _quantity = 1;
   late List<_Zone> _zones;
   int _selectedZone = 0;
@@ -63,7 +62,7 @@ class _CheckoutFlowScreenState extends State<CheckoutFlowScreen> {
     if (!mounted) return;
     setState(() {
       _processing = false;
-      _step = 2; // success
+      _step = 2;
     });
   }
 
@@ -88,7 +87,7 @@ class _CheckoutFlowScreenState extends State<CheckoutFlowScreen> {
         builder: (_) => TicketETicketScreen(
           event: widget.event,
           zoneCode: zone.code,
-            zoneLabel: zone.label,
+          zoneLabel: zone.label,
           unitPrice: zone.price,
           quantity: _quantity,
         ),
@@ -103,14 +102,19 @@ class _CheckoutFlowScreenState extends State<CheckoutFlowScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF0D031A),
         elevation: 0,
-        leading: _step == 0 ? IconButton(icon: const Icon(Icons.close), onPressed: ()=> Navigator.of(context).maybePop()) : IconButton(icon: const Icon(Icons.arrow_back), onPressed: _back),
+        leading: IconButton(
+          icon: Icon(_step == 0 ? Icons.close : Icons.arrow_back, color: const Color(0xFFFF4081)),
+          onPressed: _step == 0 ? () => Navigator.of(context).maybePop() : _back,
+          splashRadius: 24,
+          tooltip: 'Back',
+        ),
         title: Text(_titleForStep(), style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
       ),
       body: Column(
         children: [
           _StepIndicator(step: _step),
           const SizedBox(height: 8),
-          Expanded(child: _buildStep()),
+            Expanded(child: _buildStep()),
           _bottomBar(),
         ],
       ),
@@ -178,8 +182,15 @@ class _CheckoutFlowScreenState extends State<CheckoutFlowScreen> {
             height: 92,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: const LinearGradient(colors: [Color(0xFF4E19FF), Color(0xFF6F3CFF)]),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(.4), blurRadius: 25)],
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFF4081), Color(0xFF673AB7)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(.45), blurRadius: 28, offset: const Offset(0, 6)),
+                BoxShadow(color: const Color(0xFFFF4081).withOpacity(.35), blurRadius: 38, spreadRadius: 2),
+              ],
             ),
             child: const Icon(Icons.check_rounded, color: Colors.white, size: 54),
           ),
@@ -195,51 +206,7 @@ class _CheckoutFlowScreenState extends State<CheckoutFlowScreen> {
     );
   }
 
-  Widget _bottomBar() {
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-        decoration: const BoxDecoration(color: Color(0xFF140A26), boxShadow: [BoxShadow(color: Colors.black54, blurRadius: 20, offset: Offset(0,-8))]),
-        child: Row(
-          children: [
-            if (_step < 2)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Total', style: TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.w500)),
-                  Text('\$${_total.toStringAsFixed(0)}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                ],
-              )
-            else
-              const SizedBox.shrink(),
-            const SizedBox(width: 16),
-            Expanded(
-              child: SizedBox(
-                height: 54,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4E19FF),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-                  ),
-                  onPressed: _primaryActionEnabled() ? _onPrimaryAction : null,
-                  child: _processing
-                      ? const SizedBox(width: 22,height:22,child: CircularProgressIndicator(strokeWidth: 2,color: Colors.white))
-                      : Text(_primaryLabel(), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                ),
-              ),
-            )
-          ],
-        ),
-      ),
-    );
-  }
-
-  bool _primaryActionEnabled() {
-    if (_processing) return false;
-    return true;
-  }
+  bool _primaryActionEnabled() => !_processing;
 
   void _onPrimaryAction() {
     if (_step == 0) {
@@ -273,25 +240,33 @@ class _CheckoutFlowScreenState extends State<CheckoutFlowScreen> {
         children: [
           const Text('Zone', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w600)),
           const SizedBox(height: 14),
-          for (int i=0;i<_zones.length;i++) ...[
+          for (int i = 0; i < _zones.length; i++) ...[
             InkWell(
               borderRadius: BorderRadius.circular(14),
-              onTap: ()=> setState(()=> _selectedZone = i),
+              onTap: () => setState(() => _selectedZone = i),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 child: Row(
                   children: [
-                    _SelectDot(selected: _selectedZone == i, color: _zoneColor(i)),
+                    _SelectDot(selected: _selectedZone == i),
                     const SizedBox(width: 14),
                     _ZoneIcon(color: _zoneColor(i)),
                     const SizedBox(width: 10),
-                    Expanded(child: Text(_zones[i].label, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600))),
-                    Text('\$${_zones[i].price.toStringAsFixed(0)}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600))
+                    Expanded(
+                      child: Text(
+                        _zones[i].label,
+                        style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    Text(
+                      '\$${_zones[i].price.toStringAsFixed(0)}',
+                      style: const TextStyle(color: Color(0xFFFF4081), fontWeight: FontWeight.w700),
+                    )
                   ],
                 ),
               ),
             ),
-            if (i<_zones.length-1) const Divider(color: Colors.white12,height:1),
+            if (i < _zones.length - 1) const Divider(color: Colors.white12, height: 1),
           ]
         ],
       ),
@@ -310,12 +285,20 @@ class _CheckoutFlowScreenState extends State<CheckoutFlowScreen> {
         children: [
           const Text('Quantity', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w600)),
           const Spacer(),
-          _RoundIconButton(icon: Icons.remove, onTap: ()=> setState(()=> _quantity = (_quantity-1).clamp(1,10)), enabled: _quantity>1),
+          _RoundIconButton(
+            icon: Icons.remove,
+            onTap: () => setState(() => _quantity = (_quantity - 1).clamp(1, 10)),
+            enabled: _quantity > 1,
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18),
             child: Text('$_quantity', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
           ),
-          _RoundIconButton(icon: Icons.add, onTap: ()=> setState(()=> _quantity = (_quantity+1).clamp(1,10)), enabled: _quantity<10),
+            _RoundIconButton(
+            icon: Icons.add,
+            onTap: () => setState(() => _quantity = (_quantity + 1).clamp(1, 10)),
+            enabled: _quantity < 10,
+          ),
         ],
       ),
     );
@@ -325,15 +308,15 @@ class _CheckoutFlowScreenState extends State<CheckoutFlowScreen> {
     final zone = _zones[_selectedZone];
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1230),
+        color: const Color(0xFF2A1E3F),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white12),
+        border: Border.all(color: const Color(0x332A1E3F)),
       ),
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Order Summary', style: TextStyle(color: Colors.white.withOpacity(.9), fontWeight: FontWeight.w700)),
+          const Text('Order Summary', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
           const SizedBox(height: 14),
           _summaryRow('Tickets', '${_quantity} x ${zone.label}'),
           _summaryRow('Sub Total', '\$${_total.toStringAsFixed(0)}'),
@@ -350,7 +333,7 @@ class _CheckoutFlowScreenState extends State<CheckoutFlowScreen> {
                 Text(_paymentLabel(), style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600)),
                 const Spacer(),
                 TextButton(
-                  onPressed: () => setState(()=> _step = 0),
+                  onPressed: () => setState(() => _step = 0),
                   child: const Text('Edit', style: TextStyle(color: Colors.white70)),
                 )
               ],
@@ -372,11 +355,11 @@ class _CheckoutFlowScreenState extends State<CheckoutFlowScreen> {
   }
 
   List<_PaymentMethod> _paymentMethods() => const [
-    _PaymentMethod(id: 'credit_card', label: 'Credit Card', logos: ['MC','AMEX','VISA']),
-    _PaymentMethod(id: 'paypal', label: 'Paypal', logos: ['PP']),
-    _PaymentMethod(id: 'apple_pay', label: 'Apple Pay', logos: ['Pay']),
-    _PaymentMethod(id: 'google_pay', label: 'Google Pay', logos: ['GPay']),
-  ];
+        _PaymentMethod(id: 'credit_card', label: 'Credit Card', logos: ['MC', 'AMEX', 'VISA']),
+        _PaymentMethod(id: 'paypal', label: 'Paypal', logos: ['PP']),
+        _PaymentMethod(id: 'apple_pay', label: 'Apple Pay', logos: ['Pay']),
+        _PaymentMethod(id: 'google_pay', label: 'Google Pay', logos: ['GPay']),
+      ];
 
   Widget _paymentTile(_PaymentMethod method) {
     final selected = _paymentMethod == method.id;
@@ -393,10 +376,10 @@ class _CheckoutFlowScreenState extends State<CheckoutFlowScreen> {
         ),
         child: Row(
           children: [
-            _SelectDot(selected: selected, color: const Color(0xFF6F3CFF)),
+            _SelectDot(selected: selected),
             const SizedBox(width: 14),
             Expanded(child: Text(method.label, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600))),
-            Row(children: [ for (final l in method.logos) ...[ _logoBadge(l), const SizedBox(width:6) ] ])
+            Row(children: [for (final l in method.logos) ...[_logoBadge(l), const SizedBox(width: 6)]])
           ],
         ),
       ),
@@ -404,17 +387,63 @@ class _CheckoutFlowScreenState extends State<CheckoutFlowScreen> {
   }
 
   Widget _logoBadge(String text) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.white24)),
-    child: Text(text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
-  );
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.white24)),
+        child: Text(text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+      );
 
   Color _zoneColor(int index) {
     switch (index) {
-      case 0: return const Color(0xFF6F3CFF);
-      case 1: return const Color(0xFF3C88FF);
-      default: return const Color(0xFF9AA4B1);
+      case 0:
+        return const Color(0xFF6F3CFF);
+      case 1:
+        return const Color(0xFF3C88FF);
+      default:
+        return const Color(0xFF9AA4B1);
     }
+  }
+
+  Widget _bottomBar() {
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+        decoration: const BoxDecoration(
+          color: Color(0xFF1A1A1A),
+          boxShadow: [BoxShadow(color: Colors.black87, blurRadius: 18, offset: Offset(0, -6))],
+        ),
+        child: Row(
+          children: [
+            if (_step < 2)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Total', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500, letterSpacing: .3)),
+                  const SizedBox(height: 2),
+                  Text(
+                    '\$${_total.toStringAsFixed(0)}',
+                    style: const TextStyle(color: Color(0xFFFF4081), fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: .2),
+                  ),
+                ],
+              )
+            else
+              const SizedBox.shrink(),
+            const SizedBox(width: 16),
+            Expanded(
+              child: SizedBox(
+                height: 54,
+                child: _GradientActionButton(
+                  enabled: _primaryActionEnabled(),
+                  loading: _processing,
+                  label: _primaryLabel(),
+                  onTap: _primaryActionEnabled() ? _onPrimaryAction : null,
+                ),
+              ),
+            )
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -423,49 +452,61 @@ class _StepIndicator extends StatelessWidget {
   final int step;
   @override
   Widget build(BuildContext context) {
-    final items = const ['Checkout','Payment','Success'];
+    final items = const ['Checkout', 'Payment', 'Success'];
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 4),
       child: Row(
         children: [
-          for (int i=0;i<items.length;i++) ...[
-            _StepPill(label: (i+1).toString(), active: step==i, done: step>i),
-            if (i<items.length-1) Expanded(child: Container(height: 2, margin: const EdgeInsets.symmetric(horizontal: 6), decoration: BoxDecoration(gradient: LinearGradient(colors: _lineColors(i))))),
+          for (int i = 0; i < items.length; i++) ...[
+            _StepPill(label: (i + 1).toString(), active: step == i, done: step > i),
+            if (i < items.length - 1)
+              Expanded(
+                child: Container(
+                  height: 2,
+                  margin: const EdgeInsets.symmetric(horizontal: 6),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: step > i
+                          ? const [Color(0xFFFF4081), Color(0xFF673AB7)]
+                          : const [Color(0xFF4A3B6B), Color(0xFF4A3B6B)],
+                    ),
+                  ),
+                ),
+              ),
           ]
         ],
       ),
     );
   }
-
-  List<Color> _lineColors(int i) {
-    if (step>i) return const [Color(0xFF6F3CFF), Color(0xFF4E19FF)];
-    return [Colors.white24, Colors.white12];
-  }
 }
 
 class _StepPill extends StatelessWidget {
   const _StepPill({required this.label, required this.active, required this.done});
-  final String label; final bool active; final bool done;
+  final String label;
+  final bool active;
+  final bool done;
   @override
   Widget build(BuildContext context) {
-    final bg = active ? const LinearGradient(colors:[Color(0xFF6F3CFF), Color(0xFF4E19FF)]) : null;
+  final LinearGradient? bg = active
+    ? const LinearGradient(colors: [Color(0xFFFF4081), Color(0xFF673AB7)])
+    : (done
+      ? const LinearGradient(colors: [Color(0xFFFF4081), Color(0xFF673AB7)])
+      : null);
     return Container(
       padding: const EdgeInsets.all(1.5),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: done && !active ? const LinearGradient(colors:[Color(0xFF6F3CFF), Color(0xFF4E19FF)]) : null,
-        border: !active && !done ? Border.all(color: Colors.white30, width: 1.2) : null,
+        border: !active && !done ? Border.all(color: const Color(0xFF4A3B6B), width: 1.2) : null,
+  gradient: done && !active ? const LinearGradient(colors: [Color(0xFFFF4081), Color(0xFF673AB7)]) : null,
       ),
       child: CircleAvatar(
         radius: 16,
-        backgroundColor: active ? null : (done ? Colors.transparent : Colors.transparent),
+        backgroundColor: Colors.transparent,
         child: Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: bg,
-          ),
+          decoration: BoxDecoration(shape: BoxShape.circle, gradient: bg),
           alignment: Alignment.center,
-          child: Text(done ? '✓' : label, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+          child: Text(done ? '✓' : label,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
         ),
       ),
     );
@@ -473,10 +514,18 @@ class _StepPill extends StatelessWidget {
 }
 
 class _PaymentMethod {
-  final String id; final String label; final List<String> logos; const _PaymentMethod({required this.id, required this.label, this.logos = const []});
+  final String id;
+  final String label;
+  final List<String> logos;
+  const _PaymentMethod({required this.id, required this.label, this.logos = const []});
 }
 
-class _Zone { final String code; final String label; final double price; const _Zone(this.code,this.label,this.price); }
+class _Zone {
+  final String code;
+  final String label;
+  final double price;
+  const _Zone(this.code, this.label, this.price);
+}
 
 class _EventSummaryCard extends StatelessWidget {
   const _EventSummaryCard({required this.event});
@@ -495,9 +544,14 @@ class _EventSummaryCard extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Container(
-              width: 86, height: 66,
+              width: 86,
+              height: 66,
               color: const Color(0xFF2A1C42),
-              child: Image.network(event.imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.image, color: Colors.white30)),
+              child: Image.network(
+                event.imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const Icon(Icons.image, color: Colors.white30),
+              ),
             ),
           ),
           const SizedBox(width: 14),
@@ -505,11 +559,16 @@ class _EventSummaryCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(event.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                Text(event.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 6),
-                Text(event.location.split(',').first, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                Text(event.location.split(',').first,
+                    style: const TextStyle(color: Colors.white54, fontSize: 12)),
                 const SizedBox(height: 4),
-                Text(_dateLine(event.date), style: const TextStyle(color: Colors.white38, fontSize: 11)),
+                Text(_dateLine(event.date),
+                    style: const TextStyle(color: Colors.white38, fontSize: 11)),
               ],
             ),
           )
@@ -518,12 +577,211 @@ class _EventSummaryCard extends StatelessWidget {
     );
   }
 
-  String _dateLine(DateTime d) => '${d.day.toString().padLeft(2,'0')} ${_months[d.month-1]} | ${d.year}';
-  static const _months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  String _dateLine(DateTime d) =>
+      '${d.day.toString().padLeft(2, '0')} ${_months[d.month - 1]} | ${d.year}';
+  static const _months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec'
+  ];
 }
 
-class _SelectDot extends StatelessWidget { const _SelectDot({required this.selected, required this.color}); final bool selected; final Color color; @override Widget build(BuildContext context){ return AnimatedContainer(duration: const Duration(milliseconds:220), width:20,height:20, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: selected? color: Colors.white54, width:2), color: selected? color: Colors.transparent), child: selected? const Icon(Icons.check,size:12,color: Colors.white): null); }}
-class _ZoneIcon extends StatelessWidget { const _ZoneIcon({required this.color}); final Color color; @override Widget build(BuildContext context){ return Container(width:30,height:30, decoration: BoxDecoration(gradient: LinearGradient(colors:[color, color.withOpacity(.55)]), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.white24)), alignment: Alignment.center, child: const Icon(Icons.event_seat, size:16,color: Colors.white)); }}
-class _RoundIconButton extends StatelessWidget { const _RoundIconButton({required this.icon, required this.onTap, this.enabled = true}); final IconData icon; final VoidCallback onTap; final bool enabled; @override Widget build(BuildContext context){ return Opacity(opacity: enabled?1:.4, child: InkResponse(onTap: enabled? onTap: null, radius:22, child: Container(width:34,height:34, decoration: BoxDecoration(color: const Color(0xFF2A1C42), borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.white24)), child: Icon(icon,color: Colors.white,size:18)))); }}
+class _SelectDot extends StatelessWidget {
+  const _SelectDot({required this.selected});
+  final bool selected;
+  @override
+  Widget build(BuildContext context) {
+    const inactiveBorder = Color(0xFF8881A9);
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: selected ? null : Border.all(color: inactiveBorder, width: 2),
+        gradient: selected
+            ? const LinearGradient(
+                colors: [Color(0xFFFF4081), Color(0xFF673AB7)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : null,
+        boxShadow: selected
+            ? [
+                BoxShadow(
+                  color: const Color(0xFFFF4081).withOpacity(.45),
+                  blurRadius: 10,
+                  spreadRadius: 1,
+                )
+              ]
+            : null,
+      ),
+      alignment: Alignment.center,
+      child: selected ? const Icon(Icons.check, size: 13, color: Colors.white) : null,
+    );
+  }
+}
 
-Widget _summaryRow(String label, String value, {bool bold = false}) => Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Row(children:[ Expanded(child: Text(label, style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: bold? FontWeight.w700: FontWeight.w500))), Text(value, style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: bold? FontWeight.w700: FontWeight.w600)), ]));
+class _ZoneIcon extends StatelessWidget {
+  const _ZoneIcon({required this.color});
+  final Color color;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [color, color.withOpacity(.55)]),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white24),
+      ),
+      alignment: Alignment.center,
+      child: const Icon(Icons.event_seat, size: 16, color: Colors.white),
+    );
+  }
+}
+
+class _RoundIconButton extends StatelessWidget {
+  const _RoundIconButton({required this.icon, required this.onTap, this.enabled = true});
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool enabled;
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: enabled ? 1 : .35,
+      child: InkResponse(
+        onTap: enabled ? onTap : null,
+        radius: 24,
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: const Color(0xFF3B2A54),
+            borderRadius: BorderRadius.circular(40),
+            border: Border.all(color: const Color(0xFF503B6E), width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(.35),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              )
+            ],
+          ),
+          alignment: Alignment.center,
+          child: Icon(icon, color: const Color(0xFFFF4081), size: 18),
+        ),
+      ),
+    );
+  }
+}
+
+Widget _summaryRow(String label, String value, {bool bold = false}) {
+  final isMoney = value.contains('\$');
+  final valueColor = isMoney ? const Color(0xFFFF4081) : Colors.white;
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: const Color(0xFFBDBDBD),
+              fontSize: 12,
+              fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+              letterSpacing: .2,
+            ),
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            color: valueColor,
+            fontSize: 13,
+            fontWeight: bold ? FontWeight.w700 : FontWeight.w600,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _GradientActionButton extends StatelessWidget {
+  const _GradientActionButton({
+    required this.enabled,
+    required this.loading,
+    required this.label,
+    required this.onTap,
+  });
+  final bool enabled;
+  final bool loading;
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final gradient = const LinearGradient(
+      colors: [Color(0xFFFFD1DC), Color(0xFFFF4081), Color(0xFF673AB7)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+    return Opacity(
+      opacity: enabled ? 1 : .45,
+      child: Material(
+        color: Colors.transparent,
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: gradient,
+            borderRadius: BorderRadius.circular(40),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFFF4081).withOpacity(.35),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: InkWell(
+            onTap: enabled && !loading ? onTap : null,
+            borderRadius: BorderRadius.circular(40),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: loading
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Text(
+                        label,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: .3,
+                        ),
+                      ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+// End of file

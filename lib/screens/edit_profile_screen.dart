@@ -80,10 +80,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     final u = _user;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF1A1A1A),
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: const Text('Edit Profile'),
+        backgroundColor: const Color(0xFF1A1A1A),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFFFF4081)),
+            splashRadius: 24,
+          onPressed: () => Navigator.of(context).maybePop(),
+          tooltip: 'Back',
+        ),
+        title: const Text(
+          'Edit Profile',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            letterSpacing: .3,
+          ),
+        ),
+        centerTitle: false,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -137,19 +153,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               const SizedBox(height: 40),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.greenAccent.shade400,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                  onPressed: _saving ? null : _save,
-                  child: _saving
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
-                      : const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.w700)),
+                child: _SaveButton(
+                  saving: _saving,
+                  onTap: _saving ? null : _save,
                 ),
-              )
+              ),
             ],
           ),
         ),
@@ -160,10 +168,81 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   InputDecoration _fieldDecoration(String label) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Colors.white70),
+      labelStyle: const TextStyle(color: Color(0xFFBDBDBD), fontWeight: FontWeight.w500),
       filled: true,
-      fillColor: const Color(0xFF1E1E22),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+      fillColor: const Color(0xFF2A2A2A),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.transparent, width: 0),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFFFF4081), width: 1.6),
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.transparent, width: 0),
+      ),
+    );
+  }
+}
+
+class _SaveButton extends StatelessWidget {
+  const _SaveButton({required this.saving, required this.onTap});
+  final bool saving;
+  final VoidCallback? onTap;
+  @override
+  Widget build(BuildContext context) {
+    final gradient = const LinearGradient(
+      colors: [Color(0xFFFFD1DC), Color(0xFFFF4081), Color(0xFF673AB7)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+    return Opacity(
+      opacity: onTap == null ? .5 : 1,
+      child: Material(
+        color: Colors.transparent,
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: gradient,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFFF4081).withOpacity(.35),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              child: Center(
+                child: saving
+                    ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Text(
+                        'Save Changes',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: .4,
+                        ),
+                      ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
