@@ -17,6 +17,7 @@ class _HomeTabState extends State<HomeTab> {
   (List<Event>, List<Event>, List<Event>)? _cache;
   Object? _error;
   bool _loading = false;
+  bool _disposed = false; // defensive flag
 
   String? _selectedCategory; // null or 'All' means show everything
 
@@ -27,29 +28,36 @@ class _HomeTabState extends State<HomeTab> {
   ];
 
   Future<(List<Event>, List<Event>, List<Event>)> _loadSections() async {
-    final trending = await _repo.fetchTrending();
-    final upcoming = await _repo.fetchUpcoming();
-    final nearby = await _repo.fetchNearby();
+    // Wrap each call with timeout to avoid hanging spinner forever
+    Future<List<Event>> safe(Future<List<Event>> f()) async {
+      try {
+        return await f().timeout(const Duration(seconds: 8));
+      } catch (e) {
+        // propagate the first error upward; handled in _refresh
+        rethrow;
+      }
+    }
+    final trending = await safe(_repo.fetchTrending);
+    final upcoming = await safe(_repo.fetchUpcoming);
+    final nearby = await safe(_repo.fetchNearby);
     return (trending, upcoming, nearby);
   }
 
   Future<void> _refresh() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    if (_disposed) return;
+    setState(() { _loading = true; _error = null; });
     try {
       final data = await _loadSections();
-      setState(() {
-        _cache = data;
-      });
+      if (!_disposed) {
+        setState(() { _cache = data; });
+      }
     } catch (e) {
-      setState(() {
-        _error = e;
-      });
+      if (!_disposed) {
+        setState(() { _error = e; });
+      }
     } finally {
-      if (mounted) {
-        setState(() => _loading = false);
+      if (!_disposed) {
+        setState(() { _loading = false; });
       }
     }
   }
@@ -58,6 +66,12 @@ class _HomeTabState extends State<HomeTab> {
   void initState() {
     super.initState();
     _refresh();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 
   Widget _sectionTitle(String title) => Padding(
@@ -332,7 +346,7 @@ class _HomeTabState extends State<HomeTab> {
                   children: [
                     const Icon(Icons.error_outline, color: Colors.redAccent, size: 40),
                     const SizedBox(height: 12),
-                    Text('Failed to load events', style: const TextStyle(color: Colors.white70)),
+                    const Text('Failed to load events', style: TextStyle(color: Colors.white70)),
                     const SizedBox(height: 8),
                     Text(_error.toString(),
                         textAlign: TextAlign.center,
