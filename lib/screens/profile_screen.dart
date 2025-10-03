@@ -9,7 +9,6 @@ import 'edit_profile_screen.dart';
 import 'settings_screen.dart';
 import 'intro_screen.dart';
 import '../services/profile_prefs.dart';
-import 'orders_screen.dart';
 import '../services/user_profile_service.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -386,12 +385,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             } else {
               Navigator.of(context).maybePop();
             }
-          }),
-          _divider(),
-          _menuItem(Icons.receipt_long_outlined, 'My Orders (Cloud)', () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const OrdersScreen()),
-            );
           }),
           _divider(),
           _menuItem(Icons.settings_outlined, 'Settings', () {
