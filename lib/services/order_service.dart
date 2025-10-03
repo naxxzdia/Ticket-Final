@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/event.dart';
+import 'user_profile_service.dart';
 
 /// Service responsible for writing orders & generating tickets in Firestore.
 /// Minimal v1 (single event per order, general admission / zone-based).
@@ -24,6 +25,10 @@ class OrderService {
     final user = _auth.currentUser;
     if (user == null) throw Exception('User not signed in');
 
+    // Ensure we have latest profile (may contain updated displayName)
+    final profile = await UserProfileService.instance.current();
+    final userName = profile?.displayName ?? user.displayName ?? 'User';
+
     final orderRef = _db.collection('orders').doc();
     final ticketsColl = _db.collection('tickets');
 
@@ -33,6 +38,7 @@ class OrderService {
       // Basic order doc
       txn.set(orderRef, {
         'userId': user.uid,
+        'userName': userName,
         'eventId': event.id,
         'eventTitle': event.title,
         'eventDate': event.date.toUtc(),
@@ -56,6 +62,7 @@ class OrderService {
           'orderId': orderRef.id,
           'eventId': event.id,
           'userId': user.uid,
+          'userName': userName,
           'sequence': i + 1,
           'status': 'valid',
           'issuedAt': FieldValue.serverTimestamp(),

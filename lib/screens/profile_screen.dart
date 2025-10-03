@@ -9,6 +9,8 @@ import 'edit_profile_screen.dart';
 import 'settings_screen.dart';
 import 'intro_screen.dart';
 import '../services/profile_prefs.dart';
+import 'orders_screen.dart';
+import '../services/user_profile_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key, this.onSwitchTab});
@@ -22,6 +24,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _loading = true;
   User? _user; // firebase auth user
   String? _location;
+  bool _editingName = false;
+  final _nameCtrl = TextEditingController();
+  bool _savingName = false;
 
   @override
   void initState() {
@@ -40,7 +45,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _loading = false;
       _user = FirebaseAuth.instance.currentUser;
       _location = loc;
+      _nameCtrl.text = _user?.displayName ?? '';
     });
+  }
+
+  Future<void> _saveName() async {
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) return;
+    setState(() => _savingName = true);
+    try {
+      await UserProfileService.instance.updateDisplayName(name);
+      // Refresh user instance
+      await _user?.reload();
+      _user = FirebaseAuth.instance.currentUser;
+      setState(() {
+        _editingName = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update name: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _savingName = false);
+    }
   }
 
   @override
@@ -84,7 +112,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         _avatar(),
                         const SizedBox(height: 16),
-                        Text(_user?.displayName ?? 'Guest User', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+                        _nameSection(),
                         const SizedBox(height: 6),
                         if ((_location ?? '').isNotEmpty)
                           Row(
@@ -109,6 +137,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _nameSection() {
+    if (_editingName) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 200,
+            child: TextField(
+              controller: _nameCtrl,
+              enabled: !_savingName,
+              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+              decoration: InputDecoration(
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                filled: true,
+                fillColor: const Color(0xFF2A1E3F),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+            if (_savingName)
+              const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white70))
+            else ...[
+              IconButton(
+                icon: const Icon(Icons.check, color: Color(0xFFFF4081)),
+                onPressed: _saveName,
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.white54),
+                onPressed: () => setState(() { _editingName = false; _nameCtrl.text = _user?.displayName ?? ''; }),
+              ),
+            ]
+        ],
+      );
+    }
+    return GestureDetector(
+      onTap: () => setState(() => _editingName = true),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(_user?.displayName ?? 'Guest User', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+          const SizedBox(width: 6),
+          const Icon(Icons.edit, size: 16, color: Colors.white38),
         ],
       ),
     );
@@ -310,7 +387,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Navigator.of(context).maybePop();
             }
           }),
-            _divider(),
+          _divider(),
+          _menuItem(Icons.receipt_long_outlined, 'My Orders (Cloud)', () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const OrdersScreen()),
+            );
+          }),
+          _divider(),
           _menuItem(Icons.settings_outlined, 'Settings', () {
             Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const SettingsScreen()),
