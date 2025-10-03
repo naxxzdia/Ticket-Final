@@ -14,16 +14,19 @@ class UserProfileService {
   Future<UserProfile?> current() async {
     final user = _auth.currentUser;
     if (user == null) return null;
-    final doc = await _col.doc(user.uid).get();
+    final ref = _col.doc(user.uid);
+    final doc = await ref.get();
     if (!doc.exists) {
-      // create a minimal profile if missing
-      final profile = UserProfile(
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName ?? 'User',
-      );
-      await _col.doc(user.uid).set(profile.toMap(), SetOptions(merge: true));
-      return profile;
+      final data = {
+        'uid': user.uid,
+        'email': user.email,
+        'displayName': user.displayName ?? 'User',
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+      try {
+        await ref.set(data, SetOptions(merge: true));
+      } catch (_) {}
+      return UserProfile.fromMap(data);
     }
     return UserProfile.fromMap(doc.data()!);
   }
@@ -32,42 +35,46 @@ class UserProfileService {
     final user = _auth.currentUser;
     if (user == null) throw Exception('Not signed in');
 
-    // Update FirebaseAuth displayName too
     await user.updateDisplayName(name);
-
+    final ref = _col.doc(user.uid);
     final data = {
       'uid': user.uid,
       'email': user.email,
       'displayName': name,
-      'updatedAt': DateTime.now().toUtc().toIso8601String(),
+      'updatedAt': FieldValue.serverTimestamp(),
     };
-    await _col.doc(user.uid).set(data, SetOptions(merge: true));
+    try {
+      await ref.set(data, SetOptions(merge: true));
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        throw Exception('Permission denied writing user profile. Please adjust Firestore rules.');
+      }
+      rethrow;
+    }
 
-    // Optionally trigger background backfill (non-blocking)
+    // Fire and forget backfill
+    // ignore: unawaited_futures
     _backfillUserName(user.uid, name);
 
     return UserProfile.fromMap(data);
   }
 
-  // Best-effort backfill: update orders & tickets userName field if different.
   Future<void> _backfillUserName(String uid, String newName) async {
     try {
-      // Update orders
-      final ordersSnap = await _db.collection('orders')
-        .where('userId', isEqualTo: uid)
-        .limit(50) // safety limit
-        .get();
       final batch = _db.batch();
+      final ordersSnap = await _db.collection('orders')
+          .where('userId', isEqualTo: uid)
+          .limit(50)
+          .get();
       for (final d in ordersSnap.docs) {
         if (d.data()['userName'] != newName) {
           batch.update(d.reference, {'userName': newName});
         }
       }
-      // Update tickets
       final ticketsSnap = await _db.collection('tickets')
-        .where('userId', isEqualTo: uid)
-        .limit(100)
-        .get();
+          .where('userId', isEqualTo: uid)
+          .limit(100)
+          .get();
       for (final d in ticketsSnap.docs) {
         if (d.data()['userName'] != newName) {
           batch.update(d.reference, {'userName': newName});
@@ -75,7 +82,7 @@ class UserProfileService {
       }
       await batch.commit();
     } catch (_) {
-      // silently ignore; not critical.
+      // ignore; non-critical
     }
   }
 }
