@@ -1,7 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../services/ticket_storage.dart';
-import '../models/purchased_ticket.dart';
+
 import '../models/event.dart';
+import '../models/purchased_ticket.dart';
+import '../services/ticket_storage.dart';
 import 'ticket_eticket_screen.dart';
 
 class TicketsTab extends StatefulWidget {
@@ -16,6 +19,7 @@ class _TicketsTabState extends State<TicketsTab> with AutomaticKeepAliveClientMi
   bool _loading = true;
   final _activeScroll = ScrollController();
   final _passedScroll = ScrollController();
+  bool _useCloud = false; // toggle between local storage and Firestore
 
   @override
   bool get wantKeepAlive => true;
@@ -28,6 +32,10 @@ class _TicketsTabState extends State<TicketsTab> with AutomaticKeepAliveClientMi
 
   Future<void> _load() async {
     setState(() => _loading = true);
+    if (_useCloud) {
+      await _loadFromFirestore();
+      return;
+    }
     final data = await TicketStorage.instance.loadAll();
     if (!mounted) return;
     setState(() {
@@ -36,12 +44,68 @@ class _TicketsTabState extends State<TicketsTab> with AutomaticKeepAliveClientMi
     });
   }
 
+  Future<void> _loadFromFirestore() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      if (mounted) {
+        setState(() { _all = []; _loading = false; });
+      }
+      return;
+    }
+    try {
+      final query = await FirebaseFirestore.instance
+          .collection('tickets')
+          .where('userId', isEqualTo: uid)
+          .get();
+      final now = DateTime.now();
+      final items = query.docs.map((doc) {
+        final m = doc.data();
+        DateTime parseDate(dynamic v) {
+          if (v == null) return now;
+            if (v is Timestamp) return v.toDate();
+          return DateTime.tryParse(v.toString()) ?? now;
+        }
+        final date = parseDate(m['eventDate']);
+        final unitPrice = (m['unitPrice'] is num) ? (m['unitPrice'] as num).toDouble() : 0.0;
+        return PurchasedTicket(
+          id: doc.id,
+          eventId: m['eventId'] ?? '',
+          title: m['eventTitle'] ?? 'Event',
+          imageUrl: m['imageUrl'] ?? '',
+          location: m['eventLocation'] ?? '',
+          eventDate: date,
+          zoneCode: m['zoneCode'] ?? '',
+          zoneLabel: m['zoneLabel'] ?? '',
+          unitPrice: unitPrice,
+          quantity: 1, // each ticket doc is a single seat record
+          total: unitPrice,
+          orderId: m['orderId'] ?? '',
+          purchasedAt: DateTime.now(),
+          passed: date.isBefore(now),
+        );
+      }).toList();
+      if (!mounted) return;
+      setState(() {
+        _all = items;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() { _all = []; _loading = false; });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load cloud tickets: $e')),
+      );
+    }
+  }
+
   Future<void> _deleteOne(String id) async {
+    if (_useCloud) return; // deletion of cloud tickets not implemented yet
     await TicketStorage.instance.remove(id);
     await _load();
   }
 
   Future<void> _confirmClearAll() async {
+    if (_useCloud) return; // do nothing for cloud mode
     if (_all.isEmpty) return;
     final ok = await showDialog<bool>(
       context: context,
@@ -114,27 +178,31 @@ class _TicketsTabState extends State<TicketsTab> with AutomaticKeepAliveClientMi
     return ListView.separated(
       controller: controller,
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
-      itemBuilder: (_, i) => Dismissible(
-        key: ValueKey(data[i].id),
-        background: _swipeBg(Colors.redAccent, Icons.delete_outline, 'Delete'),
-        direction: DismissDirection.endToStart,
-        confirmDismiss: (_) async {
-          return await showDialog<bool>(
-                context: context,
-                builder: (c) => AlertDialog(
-                  backgroundColor: const Color(0xFF1E1E22),
-                  title: const Text('Delete ticket?', style: TextStyle(color: Colors.white,fontSize:16,fontWeight: FontWeight.w600)),
-                  content: const Text('This cannot be undone.', style: TextStyle(color: Colors.white70)),
-                  actions: [
-                    TextButton(onPressed: ()=>Navigator.pop(c,false), child: const Text('Cancel')),
-                    TextButton(onPressed: ()=>Navigator.pop(c,true), child: const Text('Delete', style: TextStyle(color: Colors.redAccent))),
-                  ],
-                ),
-              ) ?? false;
-        },
-        onDismissed: (_) => _deleteOne(data[i].id),
-        child: _TicketRow(ticket: data[i]),
-      ),
+      itemBuilder: (_, i) {
+        final row = _TicketRow(ticket: data[i]);
+        if (_useCloud) return row; // no swipe actions in cloud mode (not implemented)
+        return Dismissible(
+          key: ValueKey(data[i].id),
+          background: _swipeBg(Colors.redAccent, Icons.delete_outline, 'Delete'),
+          direction: DismissDirection.endToStart,
+          confirmDismiss: (_) async {
+            return await showDialog<bool>(
+                  context: context,
+                  builder: (c) => AlertDialog(
+                    backgroundColor: const Color(0xFF1E1E22),
+                    title: const Text('Delete ticket?', style: TextStyle(color: Colors.white,fontSize:16,fontWeight: FontWeight.w600)),
+                    content: const Text('This cannot be undone.', style: TextStyle(color: Colors.white70)),
+                    actions: [
+                      TextButton(onPressed: ()=>Navigator.pop(c,false), child: const Text('Cancel')),
+                      TextButton(onPressed: ()=>Navigator.pop(c,true), child: const Text('Delete', style: TextStyle(color: Colors.redAccent))),
+                    ],
+                  ),
+                ) ?? false;
+          },
+          onDismissed: (_) => _deleteOne(data[i].id),
+          child: row,
+        );
+      },
       separatorBuilder: (_, __) => const SizedBox(height: 14),
       itemCount: data.length,
     );
@@ -168,6 +236,29 @@ class _TicketsTabState extends State<TicketsTab> with AutomaticKeepAliveClientMi
             children: [
               const Text('Tickets', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
               const Spacer(),
+              GestureDetector(
+                onTap: () {
+                  setState(() { _useCloud = !_useCloud; });
+                  _load();
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: Colors.white24),
+                    gradient: _useCloud ? const LinearGradient(colors:[Color(0xFFFF4081), Color(0xFF673AB7)]) : null,
+                    color: _useCloud ? null : const Color(0xFF2F2F2F),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(_useCloud ? Icons.cloud_done : Icons.storage, size: 16, color: Colors.white),
+                      const SizedBox(width: 6),
+                      Text(_useCloud ? 'Cloud' : 'Local', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
               _buildTrashButton(),
             ],
           ),
@@ -175,9 +266,9 @@ class _TicketsTabState extends State<TicketsTab> with AutomaticKeepAliveClientMi
       );
 
   Widget _buildTrashButton() {
-    final disabled = _all.isEmpty;
+    final disabled = _useCloud || _all.isEmpty;
     final baseIcon = Icon(Icons.delete_sweep_outlined, size: 24, color: disabled ? Colors.white24 : Colors.white);
-    if (disabled) return IconButton(tooltip: 'Clear All', onPressed: null, icon: baseIcon);
+    if (disabled) return IconButton(tooltip: _useCloud ? 'Disabled in cloud mode' : 'Clear All', onPressed: null, icon: baseIcon);
     return InkResponse(
       onTap: _confirmClearAll,
       radius: 24,
@@ -321,7 +412,6 @@ class _TicketRow extends StatelessWidget {
       ),
     );
   }
-
   Widget _thumb(String url) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
@@ -340,11 +430,11 @@ class _TicketRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-            gradient: const LinearGradient(
-              colors: [Color(0xFFFF4081), Color(0xFF673AB7)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFF4081), Color(0xFF673AB7)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.white.withOpacity(.20),
@@ -390,11 +480,11 @@ class _TicketRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-            gradient: const LinearGradient(
-              colors: [Color(0xFFFF4081), Color(0xFF673AB7)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFF4081), Color(0xFF673AB7)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.white.withOpacity(.15),
