@@ -53,10 +53,11 @@ class _TicketsTabState extends State<TicketsTab> with AutomaticKeepAliveClientMi
       return;
     }
     try {
-      final query = await FirebaseFirestore.instance
-          .collection('tickets')
-          .where('userId', isEqualTo: uid)
-          .get();
+    final query = await FirebaseFirestore.instance
+      .collection('tickets')
+      .where('userId', isEqualTo: uid)
+      .orderBy('eventDate')
+      .get();
       final now = DateTime.now();
       final items = query.docs.map((doc) {
         final m = doc.data();
@@ -66,6 +67,12 @@ class _TicketsTabState extends State<TicketsTab> with AutomaticKeepAliveClientMi
           return DateTime.tryParse(v.toString()) ?? now;
         }
         final date = parseDate(m['eventDate']);
+        DateTime parsePurchased(dynamic v) {
+          if (v == null) return date; // fallback
+          if (v is Timestamp) return v.toDate();
+          return DateTime.tryParse(v.toString()) ?? date;
+        }
+        final purchasedAt = parsePurchased(m['purchasedAt']);
         final unitPrice = (m['unitPrice'] is num) ? (m['unitPrice'] as num).toDouble() : 0.0;
         return PurchasedTicket(
           id: doc.id,
@@ -80,7 +87,7 @@ class _TicketsTabState extends State<TicketsTab> with AutomaticKeepAliveClientMi
           quantity: 1, // each ticket doc is a single seat record
           total: unitPrice,
           orderId: m['orderId'] ?? '',
-          purchasedAt: DateTime.now(),
+          purchasedAt: purchasedAt,
           passed: date.isBefore(now),
         );
       }).toList();
@@ -102,6 +109,30 @@ class _TicketsTabState extends State<TicketsTab> with AutomaticKeepAliveClientMi
     if (_useCloud) return; // deletion of cloud tickets not implemented yet
     await TicketStorage.instance.remove(id);
     await _load();
+  }
+
+  Future<void> _deleteCloudTicket(String id) async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return;
+      final ref = FirebaseFirestore.instance.collection('tickets').doc(id);
+      final snap = await ref.get();
+      if (snap.exists) {
+        final data = snap.data();
+        if (data != null && data['userId'] == uid) {
+          await ref.delete();
+        }
+      }
+      // Optimistic UI: remove locally
+      if (mounted) {
+        setState(() { _all.removeWhere((t) => t.id == id); });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Delete failed: $e')),
+      );
+    }
   }
 
   Future<void> _confirmClearAll() async {
@@ -180,7 +211,29 @@ class _TicketsTabState extends State<TicketsTab> with AutomaticKeepAliveClientMi
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
       itemBuilder: (_, i) {
         final row = _TicketRow(ticket: data[i]);
-        if (_useCloud) return row; // no swipe actions in cloud mode (not implemented)
+        if (_useCloud) {
+          return Dismissible(
+            key: ValueKey(data[i].id),
+            background: _swipeBg(Colors.redAccent, Icons.delete_outline, 'Delete'),
+            direction: DismissDirection.endToStart,
+            confirmDismiss: (_) async {
+              return await showDialog<bool>(
+                    context: context,
+                    builder: (c) => AlertDialog(
+                      backgroundColor: const Color(0xFF1E1E22),
+                      title: const Text('Delete cloud ticket?', style: TextStyle(color: Colors.white,fontSize:16,fontWeight: FontWeight.w600)),
+                      content: const Text('This will remove this ticket from your account.', style: TextStyle(color: Colors.white70)),
+                      actions: [
+                        TextButton(onPressed: ()=>Navigator.pop(c,false), child: const Text('Cancel')),
+                        TextButton(onPressed: ()=>Navigator.pop(c,true), child: const Text('Delete', style: TextStyle(color: Colors.redAccent))),
+                      ],
+                    ),
+                  ) ?? false;
+            },
+            onDismissed: (_) => _deleteCloudTicket(data[i].id),
+            child: row,
+          );
+        }
         return Dismissible(
           key: ValueKey(data[i].id),
           background: _swipeBg(Colors.redAccent, Icons.delete_outline, 'Delete'),

@@ -60,9 +60,15 @@ class OrderService {
           'sequence': i + 1,
           'status': 'valid',
           'issuedAt': FieldValue.serverTimestamp(),
+          'purchasedAt': FieldValue.serverTimestamp(),
           'qrData': '${orderRef.id}#$i',
           'zoneCode': zoneCode,
           'zoneLabel': zoneLabel,
+          'eventDate': event.date.toUtc(),
+          'eventTitle': event.title,
+          'imageUrl': event.imageUrl,
+          'eventLocation': event.location,
+          'unitPrice': unitPrice,
         });
       }
     });
