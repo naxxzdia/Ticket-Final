@@ -19,7 +19,8 @@ class _CheckoutFlowScreenState extends State<CheckoutFlowScreen> {
   late List<_Zone> _zones;
   int _selectedZone = 0;
   String _paymentMethod = 'credit_card';
-  bool _processing = false;
+  bool _processing = false; // used for payment step
+  bool _creatingOrder = false; // will be removed from UI overlay (kept only for button state)
 
   double get _unitPrice => _zones[_selectedZone].price;
   double get _total => _unitPrice * _quantity;
@@ -69,6 +70,7 @@ class _CheckoutFlowScreenState extends State<CheckoutFlowScreen> {
 
   Future<void> _viewTicket() async {
     final zone = _zones[_selectedZone];
+    setState(() => _creatingOrder = true);
     String? orderId;
     try {
       orderId = await OrderService.instance.createOrder(
@@ -81,6 +83,7 @@ class _CheckoutFlowScreenState extends State<CheckoutFlowScreen> {
       );
     } catch (e) {
       if (mounted) {
+        setState(() => _creatingOrder = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to create order: $e')),
         );
@@ -105,6 +108,7 @@ class _CheckoutFlowScreenState extends State<CheckoutFlowScreen> {
       // Ignore local persistence failure
     }
     if (!mounted) return;
+    setState(() => _creatingOrder = false);
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => TicketETicketScreen(
@@ -121,27 +125,27 @@ class _CheckoutFlowScreenState extends State<CheckoutFlowScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D031A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0D031A),
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(_step == 0 ? Icons.close : Icons.arrow_back, color: const Color(0xFFFF4081)),
-          onPressed: _step == 0 ? () => Navigator.of(context).maybePop() : _back,
-          splashRadius: 24,
-          tooltip: 'Back',
-        ),
-        title: Text(_titleForStep(), style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-      ),
-      body: Column(
-        children: [
-          _StepIndicator(step: _step),
-          const SizedBox(height: 8),
-            Expanded(child: _buildStep()),
-          _bottomBar(),
-        ],
-      ),
-    );
+          backgroundColor: const Color(0xFF0D031A),
+          appBar: AppBar(
+            backgroundColor: const Color(0xFF0D031A),
+            elevation: 0,
+            leading: IconButton(
+              icon: Icon(_step == 0 ? Icons.close : Icons.arrow_back, color: const Color(0xFFFF4081)),
+              onPressed: _step == 0 ? () => Navigator.of(context).maybePop() : _back,
+              splashRadius: 24,
+              tooltip: 'Back',
+            ),
+            title: Text(_titleForStep(), style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+          ),
+          body: Column(
+            children: [
+              _StepIndicator(step: _step),
+              const SizedBox(height: 8),
+              Expanded(child: _buildStep()),
+              _bottomBar(),
+            ],
+          ),
+        );
   }
 
   String _titleForStep() {
@@ -229,7 +233,10 @@ class _CheckoutFlowScreenState extends State<CheckoutFlowScreen> {
     );
   }
 
-  bool _primaryActionEnabled() => !_processing;
+  bool _primaryActionEnabled() {
+    if (_step == 2) return !_creatingOrder; // final step button disabled while creating
+    return !_processing;
+  }
 
   void _onPrimaryAction() {
     if (_step == 0) {
@@ -245,7 +252,7 @@ class _CheckoutFlowScreenState extends State<CheckoutFlowScreen> {
     switch (_step) {
       case 0: return 'Continue to Payment';
       case 1: return _processing ? 'Processing...' : 'Pay \$${_total.toStringAsFixed(0)}';
-      case 2: return 'View Ticket';
+  case 2: return _creatingOrder ? 'Creating…' : 'View Ticket';
     }
     return '';
   }
@@ -457,7 +464,7 @@ class _CheckoutFlowScreenState extends State<CheckoutFlowScreen> {
                 height: 54,
                 child: _GradientActionButton(
                   enabled: _primaryActionEnabled(),
-                  loading: _processing,
+                  loading: _step == 1 ? _processing : (_step == 2 && _creatingOrder),
                   label: _primaryLabel(),
                   onTap: _primaryActionEnabled() ? _onPrimaryAction : null,
                 ),
