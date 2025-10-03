@@ -408,6 +408,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _divider(),
           _menuItem(Icons.logout, 'Log Out', () async {
             await FirebaseAuth.instance.signOut();
+            TicketStorage.instance.resetMemory();
             if (!mounted) return;
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (_) => OnBoardingPage()),
