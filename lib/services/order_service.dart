@@ -45,7 +45,6 @@ class OrderService {
         'totalAmount': total,
         'paymentMethod': paymentMethod,
         'status': 'paid', // since current flow simulates instant success
-        'createdAt': FieldValue.serverTimestamp(),
         'paidAt': FieldValue.serverTimestamp(),
         'currency': 'USD',
         'ticketsBatchDone': true,

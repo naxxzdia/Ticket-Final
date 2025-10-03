@@ -12,7 +12,6 @@ class OrderDoc {
   final double totalAmount;
   final String paymentMethod;
   final String status;
-  final DateTime? createdAt;
   final DateTime? paidAt;
 
   OrderDoc({
@@ -29,7 +28,6 @@ class OrderDoc {
     required this.totalAmount,
     required this.paymentMethod,
     required this.status,
-    this.createdAt,
     this.paidAt,
   });
 
@@ -60,7 +58,6 @@ class OrderDoc {
       totalAmount: _d(map['totalAmount']),
       paymentMethod: map['paymentMethod'] ?? '',
       status: map['status'] ?? 'unknown',
-      createdAt: map['createdAt'] == null ? null : _ts(map['createdAt']),
       paidAt: map['paidAt'] == null ? null : _ts(map['paidAt']),
     );
   }
