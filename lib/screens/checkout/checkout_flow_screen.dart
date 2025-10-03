@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../../models/event.dart';
 // (Removed duplicate imports)
 import '../../services/ticket_storage.dart';
-import '../../util/id_utils.dart';
+import '../../services/order_service.dart';
+// import '../../util/id_utils.dart'; // removed (unused after Firestore integration)
 import '../ticket_eticket_screen.dart';
 
 class CheckoutFlowScreen extends StatefulWidget {
@@ -68,19 +69,41 @@ class _CheckoutFlowScreenState extends State<CheckoutFlowScreen> {
 
   Future<void> _viewTicket() async {
     final zone = _zones[_selectedZone];
-    final orderId = generateOrderId(widget.event.id);
-    await TicketStorage.instance.add(
-      eventId: widget.event.id,
-      title: widget.event.title,
-      imageUrl: widget.event.imageUrl,
-      location: widget.event.location,
-      eventDate: widget.event.date,
-      zoneCode: zone.code,
-      zoneLabel: zone.label,
-      unitPrice: zone.price,
-      quantity: _quantity,
-      orderId: orderId,
-    );
+    String? orderId;
+    try {
+      orderId = await OrderService.instance.createOrder(
+        event: widget.event,
+        zoneCode: zone.code,
+        zoneLabel: zone.label,
+        unitPrice: zone.price,
+        quantity: _quantity,
+        paymentMethod: _paymentMethod,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to create order: $e')),
+        );
+      }
+      return;
+    }
+    // Local persistence kept (optional) - could remove if fully cloud driven
+    try {
+      await TicketStorage.instance.add(
+        eventId: widget.event.id,
+        title: widget.event.title,
+        imageUrl: widget.event.imageUrl,
+        location: widget.event.location,
+        eventDate: widget.event.date,
+        zoneCode: zone.code,
+        zoneLabel: zone.label,
+        unitPrice: zone.price,
+        quantity: _quantity,
+        orderId: orderId,
+      );
+    } catch (_) {
+      // Ignore local persistence failure
+    }
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
