@@ -106,9 +106,14 @@ class _OrderTile extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: order.imageUrl.isEmpty
-                  ? Container(width: 64, height: 64, color: Colors.white12)
-                  : Image.network(order.imageUrl, width: 64, height: 64, fit: BoxFit.cover),
+              child: () {
+                final img = order.imageUrl; // now nullable
+                if (img == null || img.isEmpty) {
+                  return Container(width: 64, height: 64, color: Colors.white12, child: const Icon(Icons.image, color: Colors.white24, size: 28));
+                }
+                return Image.network(img, width: 64, height: 64, fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(width: 64, height: 64, color: Colors.white12, child: const Icon(Icons.broken_image, color: Colors.white30, size: 26)));
+              }(),
             ),
             const SizedBox(width: 14),
             Expanded(
