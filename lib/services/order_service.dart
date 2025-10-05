@@ -43,7 +43,6 @@ class OrderService {
         'eventTitle': event.title,
         'eventDate': event.date.toUtc(),
         'eventLocation': event.location,
-        'imageUrl': event.imageUrl,
         'zoneCode': zoneCode,
         'zoneLabel': zoneLabel,
         'unitPrice': unitPrice,
@@ -72,7 +71,6 @@ class OrderService {
           'zoneLabel': zoneLabel,
           'eventDate': event.date.toUtc(),
           'eventTitle': event.title,
-          'imageUrl': event.imageUrl,
           'eventLocation': event.location,
           'unitPrice': unitPrice,
         });

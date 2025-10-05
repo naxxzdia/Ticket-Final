@@ -4,7 +4,7 @@ class OrderDoc {
   final String eventTitle;
   final DateTime eventDate;
   final String eventLocation;
-  final String imageUrl;
+  final String? imageUrl; // removed from Firestore writes; keep nullable for backward compatibility
   final String zoneCode;
   final String zoneLabel;
   final double unitPrice;
@@ -20,7 +20,7 @@ class OrderDoc {
     required this.eventTitle,
     required this.eventDate,
     required this.eventLocation,
-    required this.imageUrl,
+    this.imageUrl,
     required this.zoneCode,
     required this.zoneLabel,
     required this.unitPrice,
@@ -50,7 +50,7 @@ class OrderDoc {
       eventTitle: map['eventTitle'] ?? '',
       eventDate: _ts(map['eventDate']),
       eventLocation: map['eventLocation'] ?? '',
-      imageUrl: map['imageUrl'] ?? '',
+  imageUrl: map['imageUrl'] as String?,
       zoneCode: map['zoneCode'] ?? '',
       zoneLabel: map['zoneLabel'] ?? '',
       unitPrice: _d(map['unitPrice']),
